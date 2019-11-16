@@ -1,0 +1,3 @@
+[submodule "libs/keyedlist"]
+	path = libs/keyedlist
+	url = git@github.com:vanangamudi/pykeyedlist.git
