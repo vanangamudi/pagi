@@ -76,8 +76,9 @@ class UnrecognizedOptionError(Exception):
 
 
 class Parser:
-    def __init__(self, name, store=None):
+    def __init__(self, name, store=None, parent=None):
         self.name = name
+        self.parent = parent
         
         self._commands  = {}
         self._arguments = OrderedDict()
@@ -87,19 +88,27 @@ class Parser:
             self.store = store
         else:
             self.store = KeyedList()
-            
+
+
+    def full_name(self, name):
+        if self.parent:
+            return '{}.{}'.format(self.name, name)
+        else:
+            return name
+    
     def add_command(self, name):
         assert name not in self._commands
-        self._commands[name] = Parser(name, self.store)
+        self._commands[name] = Parser(self.full_name(name), self.store, self)
         return self._commands[name]
 
     def add_argument(self, name, dest='', default='', type_=None):
         assert name not in self._arguments
-        self._arguments[name] = Action(name, self.store, dest, default, type_)
+        self._arguments[name] = Action(self.full_name(name), self.store, dest, default, type_)
 
     def add_option(self, name,  dest='', default='', type_=None):
+        name = name.strip('-')
         assert name not in self._options
-        self._options[name] = Action(name,  self.store, dest, default, type_)
+        self._options[name] = Action(self.full_name(name),  self.store, dest, default, type_)
 
     def print_usage(self):
         print('usage')
@@ -127,7 +136,7 @@ class Parser:
                 
             else:
                 if arg.startswith('--'):
-                    arg, value = self.split(arg)
+                    arg, value = self.split(arg.lstrip('-'))
                     if arg not in self._options:
                         raise UnrecognizedOptionError
 
@@ -136,3 +145,4 @@ class Parser:
                 elif arg in self._commands:
                     self._commands[arg].parse(args)
                     
+        return self.store
